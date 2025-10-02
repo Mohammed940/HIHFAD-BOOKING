@@ -1,14 +1,47 @@
-import { createServerClient } from "@supabase/ssr"
+import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-export async function createClient() {
+export async function createServerClient() {
   const cookieStore = await cookies()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase environment variables are not set. This is expected during build time.')
-    // Return a mock client during build time
+    // Return a mock client during build time with proper chaining
+    
+    // Create a proper mock that can be awaited
+    const mockQueryResult = { data: [], error: null }
+    const mockSingleResult = { data: null, error: null }
+    const mockCountResult = { count: 0, error: null }
+    
+    const createMockQuery = () => {
+      const mockQuery = {
+        select: function(selectParam?: string, options?: any) {
+          // Handle count queries
+          if (options?.count) {
+            return Object.assign(createMockQuery(), {
+              then: (resolve: any) => Promise.resolve(resolve(mockCountResult))
+            })
+          }
+          return createMockQuery()
+        },
+        insert: () => createMockQuery(),
+        update: () => createMockQuery(),
+        delete: () => createMockQuery(),
+        eq: () => createMockQuery(),
+        order: () => createMockQuery(),
+        limit: () => createMockQuery(),
+        single: () => Object.assign(createMockQuery(), {
+          then: (resolve: any) => Promise.resolve(resolve(mockSingleResult))
+        }),
+        range: () => createMockQuery(),
+        in: () => createMockQuery(),
+        then: (resolve: any) => Promise.resolve(resolve(mockQueryResult))
+      }
+      return mockQuery
+    }
+    
     return {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
@@ -18,31 +51,21 @@ export async function createClient() {
         signOut: () => Promise.resolve({ error: null }),
         resetPasswordForEmail: () => Promise.resolve({ error: null }),
         updateUser: () => Promise.resolve({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } }, error: null })
       },
-      from: () => ({
-        select: () => Promise.resolve({ data: [], error: null }),
-        insert: () => Promise.resolve({ data: [], error: null }),
-        update: () => Promise.resolve({ data: [], error: null }),
-        delete: () => Promise.resolve({ data: [], error: null }),
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-          limit: () => Promise.resolve({ data: [], error: null }),
-          order: () => ({
-            limit: () => Promise.resolve({ data: [], error: null })
-          })
-        })
-      }),
+      from: () => createMockQuery(),
       storage: {
         from: () => ({
           upload: () => Promise.resolve({ data: null, error: null }),
-          getPublicUrl: () => ({ data: { publicUrl: '' }, error: null })
+          getPublicUrl: () => ({ data: { publicUrl: '' }, error: null }),
+          remove: () => Promise.resolve({ data: null, error: null })
         }),
         listBuckets: () => Promise.resolve({ data: [], error: null })
       }
     }
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll()
@@ -60,4 +83,5 @@ export async function createClient() {
   })
 }
 
-export { createClient as createServerClient }
+// Export the old name for backward compatibility
+export { createServerClient as createClient }

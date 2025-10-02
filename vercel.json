@@ -24,5 +24,11 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/home"
+    }
   ]
 }
