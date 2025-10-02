@@ -3,8 +3,30 @@ import { cookies } from "next/headers"
 
 export async function createClient() {
   const cookieStore = await cookies()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables are not set. This is expected during build time.')
+    // Return a mock client during build time
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+        signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+        signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+        signOut: () => Promise.resolve({ error: null }),
+      },
+      from: () => ({
+        select: () => Promise.resolve({ data: [], error: null }),
+        insert: () => Promise.resolve({ data: [], error: null }),
+        update: () => Promise.resolve({ data: [], error: null }),
+        delete: () => Promise.resolve({ data: [], error: null }),
+      }),
+    }
+  }
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll()

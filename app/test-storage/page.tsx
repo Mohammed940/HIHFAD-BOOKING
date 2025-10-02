@@ -5,10 +5,22 @@ import { createBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+interface Bucket {
+  name: string;
+  public: boolean;
+}
+
 export default function TestStoragePage() {
   const [testResults, setTestResults] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createBrowserClient()
+  const [supabase, setSupabase] = useState<ReturnType<typeof createBrowserClient> | null>(null)
+
+  useEffect(() => {
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      setSupabase(createBrowserClient())
+    }
+  }, [])
 
   const addResult = (message: string) => {
     setTestResults(prev => [...prev, message])
@@ -16,6 +28,17 @@ export default function TestStoragePage() {
   }
 
   const testStorage = async () => {
+    if (!supabase) {
+      addResult("Supabase client not initialized")
+      return
+    }
+
+    // Check if this is the mock client (during build time)
+    if (!('storage' in supabase)) {
+      addResult("❌ Supabase client is mocked (build time). Storage tests cannot run.")
+      return
+    }
+
     setIsLoading(true)
     setTestResults([])
     
@@ -30,7 +53,7 @@ export default function TestStoragePage() {
           addResult(`❌ Bucket listing failed: ${bucketsError.message}`)
         } else {
           addResult(`✅ Buckets found: ${buckets.length}`)
-          buckets.forEach(bucket => {
+          buckets.forEach((bucket: Bucket) => {
             addResult(`  - ${bucket.name} (public: ${bucket.public})`)
           })
         }

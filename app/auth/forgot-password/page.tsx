@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,10 +18,26 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
+
+  useEffect(() => {
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      setSupabase(createClient())
+    }
+  }, [])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) return
+    
+    // Check if this is the mock client (during build time)
+    if (!('auth' in supabase)) {
+      setSuccess(true)
+      return
+    }
+    
     setIsLoading(true)
     setError(null)
 

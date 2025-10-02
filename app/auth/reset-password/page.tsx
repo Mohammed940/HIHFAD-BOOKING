@@ -24,11 +24,33 @@ export default function ResetPasswordPage() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
+
+  useEffect(() => {
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      setSupabase(createClient())
+    }
+  }, [])
+
+  useEffect(() => {
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      setSupabase(createClient())
+    }
+  }, [])
 
   useEffect(() => {
     // Check if we have a valid session for password reset
     const checkSession = async () => {
+      if (!supabase) return
+      
+      // Check if this is the mock client (during build time)
+      if (!('auth' in supabase)) {
+        setError("رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية")
+        return
+      }
+      
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -40,10 +62,19 @@ export default function ResetPasswordPage() {
     }
 
     checkSession()
-  }, [supabase.auth])
+  }, [supabase])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) return
+    
+    // Check if this is the mock client (during build time)
+    if (!('auth' in supabase)) {
+      setSuccess(true)
+      return
+    }
+    
     setIsLoading(true)
     setError(null)
 

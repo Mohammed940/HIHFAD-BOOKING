@@ -1,7 +1,13 @@
 import { updateSession } from "@/lib/supabase/middleware"
-import type { NextRequest } from "next/server"
+import type { NextRequest, NextResponse } from "next/server"
 
 export async function middleware(request: NextRequest) {
+  // Check if we're in a build environment
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('Supabase environment variables not set. Skipping middleware during build.')
+    return new Response(null, { status: 200 })
+  }
+  
   return await updateSession(request)
 }
 

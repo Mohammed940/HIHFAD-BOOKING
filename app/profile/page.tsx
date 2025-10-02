@@ -29,15 +29,30 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
 
   const router = useRouter()
-  const supabase = createClient()
+
+  useEffect(() => {
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      setSupabase(createClient())
+    }
+  }, [])
 
   useEffect(() => {
     checkUser()
   }, [])
 
   const checkUser = async () => {
+    if (!supabase) return
+    
+    // Check if this is the mock client (during build time)
+    if (!('auth' in supabase)) {
+      setIsLoading(false)
+      return
+    }
+    
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -50,6 +65,17 @@ export default function ProfilePage() {
   }
 
   const fetchProfile = async (userId: string) => {
+    if (!supabase) {
+      setIsLoading(false)
+      return
+    }
+    
+    // Check if this is the mock client (during build time)
+    if (!('from' in supabase)) {
+      setIsLoading(false)
+      return
+    }
+    
     try {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
@@ -87,7 +113,12 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
-    if (!profile || !user) return
+    if (!profile || !user || !supabase) return
+
+    // Check if this is the mock client (during build time)
+    if (!('from' in supabase)) {
+      return
+    }
 
     setIsSaving(true)
     setError(null)
