@@ -39,8 +39,18 @@ export default function HomePage() {
       try {
         const supabase = createBrowserClient()
         
+        // Check if Supabase is properly initialized
+        if (!supabase) {
+          console.error("Supabase client not initialized")
+          setIsLoading(false)
+          return
+        }
+        
         // Get user data
-        const { data: { user: userData } } = await supabase.auth.getUser()
+        const { data: { user: userData }, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+          console.error("Error fetching user data:", userError)
+        }
         setUser(userData || null)
 
         // Fetch latest news
@@ -51,7 +61,9 @@ export default function HomePage() {
           .order("published_at", { ascending: false })
           .limit(3)
         
-        if (!newsError) {
+        if (newsError) {
+          console.error("Error fetching news:", newsError)
+        } else {
           setNews(newsData || [])
         }
 
@@ -61,7 +73,9 @@ export default function HomePage() {
           .select("*", { count: "exact", head: true })
           .eq("is_active", true)
         
-        if (!countError) {
+        if (countError) {
+          console.error("Error fetching centers count:", countError)
+        } else {
           setCentersCount(centersCountData || 0)
         }
       } catch (error) {

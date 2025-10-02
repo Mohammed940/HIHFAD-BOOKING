@@ -16,13 +16,29 @@ export async function createClient() {
         signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
         signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
         signOut: () => Promise.resolve({ error: null }),
+        resetPasswordForEmail: () => Promise.resolve({ error: null }),
+        updateUser: () => Promise.resolve({ error: null }),
       },
       from: () => ({
         select: () => Promise.resolve({ data: [], error: null }),
         insert: () => Promise.resolve({ data: [], error: null }),
         update: () => Promise.resolve({ data: [], error: null }),
         delete: () => Promise.resolve({ data: [], error: null }),
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: null }),
+          limit: () => Promise.resolve({ data: [], error: null }),
+          order: () => ({
+            limit: () => Promise.resolve({ data: [], error: null })
+          })
+        })
       }),
+      storage: {
+        from: () => ({
+          upload: () => Promise.resolve({ data: null, error: null }),
+          getPublicUrl: () => ({ data: { publicUrl: '' }, error: null })
+        }),
+        listBuckets: () => Promise.resolve({ data: [], error: null })
+      }
     }
   }
 
