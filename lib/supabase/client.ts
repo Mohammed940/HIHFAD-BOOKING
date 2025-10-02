@@ -4,9 +4,9 @@ export function createBrowserClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+  // During build time or when env vars are missing, return a more robust mock
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase environment variables are not set. This is expected during build time.')
-    // Return a mock client during build time with proper chaining
+    console.warn('Supabase environment variables are not set. Using mock client.')
     
     // Create a proper mock that can be awaited
     const mockQueryResult = { data: [], error: null }
@@ -19,11 +19,8 @@ export function createBrowserClient() {
         select: function(selectParam?: string, options?: any) {
           // Handle count queries
           if (options?.count) {
-            // For count queries, we need to return an object that has both the query methods and a then method
-            const countQuery = createMockQuery();
-            // Add a then method that resolves with the count result
-            countQuery.then = (resolve: any) => Promise.resolve(resolve(mockCountResult));
-            return countQuery;
+            // For count queries, return a Promise directly to avoid TS1320 error
+            return Promise.resolve(mockCountResult);
           }
           return createMockQuery();
         },
@@ -35,19 +32,24 @@ export function createBrowserClient() {
         order: () => createMockQuery(),
         limit: () => createMockQuery(),
         single: function() {
-          const singleQuery = createMockQuery();
-          // Add a then method that resolves with the single result
-          singleQuery.then = (resolve: any) => Promise.resolve(resolve(mockSingleResult));
-          return singleQuery;
+          // Return a Promise directly to avoid TS1320 error
+          return Promise.resolve(mockSingleResult);
         },
         range: () => createMockQuery(),
-        in: () => createMockQuery(),
-        then: (resolve: any) => Promise.resolve(resolve(mockQueryResult))
+        in: () => createMockQuery()
       };
-      return mockQuery;
+      
+      // For general queries, make them thenable but ensure they're proper Promises
+      return new Promise((resolve) => {
+        // Add chainable methods to the Promise
+        const promise = Promise.resolve(mockQueryResult);
+        Object.assign(promise, mockQuery);
+        resolve(mockQueryResult);
+      });
     };
     
-    return {
+    // Create a more complete mock Supabase client
+    const mockClient: any = {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
@@ -58,7 +60,18 @@ export function createBrowserClient() {
         updateUser: () => Promise.resolve({ error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } }, error: null })
       },
-      from: () => createMockQuery(),
+      from: () => ({
+        select: (selectParam?: string, options?: any) => {
+          if (options?.count) {
+            return Promise.resolve(mockCountResult);
+          }
+          return createMockQuery();
+        },
+        insert: () => createMockQuery(),
+        update: () => createMockQuery(),
+        delete: () => createMockQuery(),
+        upsert: () => createMockQuery()
+      }),
       storage: {
         from: () => ({
           upload: () => Promise.resolve({ data: null, error: null }),
@@ -67,7 +80,9 @@ export function createBrowserClient() {
         }),
         listBuckets: () => Promise.resolve({ data: [], error: null })
       }
-    }
+    };
+    
+    return mockClient;
   }
 
   return supabaseCreateBrowserClient(supabaseUrl, supabaseAnonKey)

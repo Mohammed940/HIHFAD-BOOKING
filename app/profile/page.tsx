@@ -54,9 +54,7 @@ export default function ProfilePage() {
     }
     
     try {
-      const result = await supabase.auth.getUser()
-      // Type guard to check if result is a Promise
-      const { data: { user }, error } = result instanceof Promise ? await result : result
+      const { data: { user }, error } = await supabase.auth.getUser()
       if (error) throw error
       if (!user) {
         router.push("/auth/login")
@@ -84,9 +82,7 @@ export default function ProfilePage() {
     }
     
     try {
-      const result = await supabase.from("profiles").select("*").eq("id", userId).single()
-      // Type guard to check if result is a Promise
-      const { data, error } = result instanceof Promise ? await result : result
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
       if (error && error.code !== "PGRST116") {
         throw error
@@ -134,7 +130,7 @@ export default function ProfilePage() {
     setSuccess(false)
 
     try {
-      const result = await supabase.from("profiles").upsert({
+      const { error } = await supabase.from("profiles").upsert({
         id: user.id,
         full_name: profile.full_name,
         phone: profile.phone,
@@ -142,9 +138,6 @@ export default function ProfilePage() {
         gender: profile.gender,
         address: profile.address,
       })
-      
-      // Type guard to check if result is a Promise
-      const { error } = result instanceof Promise ? await result : result
 
       if (error) throw error
 
