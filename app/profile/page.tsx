@@ -48,20 +48,27 @@ export default function ProfilePage() {
     if (!supabase) return
     
     // Check if this is the mock client (during build time)
-    if (!('auth' in supabase)) {
+    if (!('auth' in supabase) || typeof supabase.auth.getUser !== 'function') {
       setIsLoading(false)
       return
     }
     
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      router.push("/auth/login")
-      return
+    try {
+      const result = await supabase.auth.getUser()
+      // Type guard to check if result is a Promise
+      const { data: { user }, error } = result instanceof Promise ? await result : result
+      if (error) throw error
+      if (!user) {
+        router.push("/auth/login")
+        return
+      }
+      setUser(user)
+      await fetchProfile(user.id)
+    } catch (err: any) {
+      console.error("Error checking user:", err)
+      setError(err.message)
+      setIsLoading(false)
     }
-    setUser(user)
-    await fetchProfile(user.id)
   }
 
   const fetchProfile = async (userId: string) => {
@@ -71,13 +78,15 @@ export default function ProfilePage() {
     }
     
     // Check if this is the mock client (during build time)
-    if (!('from' in supabase)) {
+    if (!('from' in supabase) || typeof supabase.from !== 'function') {
       setIsLoading(false)
       return
     }
     
     try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+      const result = await supabase.from("profiles").select("*").eq("id", userId).single()
+      // Type guard to check if result is a Promise
+      const { data, error } = result instanceof Promise ? await result : result
 
       if (error && error.code !== "PGRST116") {
         throw error
@@ -116,7 +125,7 @@ export default function ProfilePage() {
     if (!profile || !user || !supabase) return
 
     // Check if this is the mock client (during build time)
-    if (!('from' in supabase)) {
+    if (!('from' in supabase) || typeof supabase.from !== 'function') {
       return
     }
 
@@ -125,7 +134,7 @@ export default function ProfilePage() {
     setSuccess(false)
 
     try {
-      const { error } = await supabase.from("profiles").upsert({
+      const result = await supabase.from("profiles").upsert({
         id: user.id,
         full_name: profile.full_name,
         phone: profile.phone,
@@ -133,6 +142,9 @@ export default function ProfilePage() {
         gender: profile.gender,
         address: profile.address,
       })
+      
+      // Type guard to check if result is a Promise
+      const { error } = result instanceof Promise ? await result : result
 
       if (error) throw error
 

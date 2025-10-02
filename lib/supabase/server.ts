@@ -15,32 +15,39 @@ export async function createServerClient() {
     const mockSingleResult = { data: null, error: null }
     const mockCountResult = { count: 0, error: null }
     
+    // Create a mock query builder that supports chaining
     const createMockQuery = () => {
-      const mockQuery = {
+      const mockQuery: any = {
         select: function(selectParam?: string, options?: any) {
           // Handle count queries
           if (options?.count) {
-            return Object.assign(createMockQuery(), {
-              then: (resolve: any) => Promise.resolve(resolve(mockCountResult))
-            })
+            // For count queries, we need to return an object that has both the query methods and a then method
+            const countQuery = createMockQuery();
+            // Add a then method that resolves with the count result
+            countQuery.then = (resolve: any) => Promise.resolve(resolve(mockCountResult));
+            return countQuery;
           }
-          return createMockQuery()
+          return createMockQuery();
         },
         insert: () => createMockQuery(),
         update: () => createMockQuery(),
         delete: () => createMockQuery(),
+        upsert: () => createMockQuery(),
         eq: () => createMockQuery(),
         order: () => createMockQuery(),
         limit: () => createMockQuery(),
-        single: () => Object.assign(createMockQuery(), {
-          then: (resolve: any) => Promise.resolve(resolve(mockSingleResult))
-        }),
+        single: function() {
+          const singleQuery = createMockQuery();
+          // Add a then method that resolves with the single result
+          singleQuery.then = (resolve: any) => Promise.resolve(resolve(mockSingleResult));
+          return singleQuery;
+        },
         range: () => createMockQuery(),
         in: () => createMockQuery(),
         then: (resolve: any) => Promise.resolve(resolve(mockQueryResult))
-      }
-      return mockQuery
-    }
+      };
+      return mockQuery;
+    };
     
     return {
       auth: {
