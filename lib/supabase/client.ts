@@ -13,13 +13,14 @@ export function createBrowserClient() {
     const mockSingleResult = { data: null, error: null }
     const mockCountResult = { count: 0, error: null }
     
-    // Create a mock query builder that supports chaining
+    // Create a comprehensive mock query builder
     const createMockQuery = () => {
-      const mockQuery: any = {
+      // Return an object with all the methods that Supabase queries support
+      return {
+        // Query methods
         select: function(selectParam?: string, options?: any) {
           // Handle count queries
           if (options?.count) {
-            // For count queries, return a Promise directly to avoid TS1320 error
             return Promise.resolve(mockCountResult);
           }
           return createMockQuery();
@@ -28,24 +29,45 @@ export function createBrowserClient() {
         update: () => createMockQuery(),
         delete: () => createMockQuery(),
         upsert: () => createMockQuery(),
+        
+        // Filter methods
         eq: () => createMockQuery(),
+        neq: () => createMockQuery(),
+        gt: () => createMockQuery(),
+        gte: () => createMockQuery(),
+        lt: () => createMockQuery(),
+        lte: () => createMockQuery(),
+        like: () => createMockQuery(),
+        ilike: () => createMockQuery(),
+        is: () => createMockQuery(),
+        in: () => createMockQuery(),
+        contains: () => createMockQuery(),
+        containedBy: () => createMockQuery(),
+        rangeLt: () => createMockQuery(),
+        rangeGt: () => createMockQuery(),
+        rangeLte: () => createMockQuery(),
+        rangeGte: () => createMockQuery(),
+        rangeAdjacent: () => createMockQuery(),
+        overlaps: () => createMockQuery(),
+        textSearch: () => createMockQuery(),
+        fts: () => createMockQuery(),
+        plfts: () => createMockQuery(),
+        phfts: () => createMockQuery(),
+        wfts: () => createMockQuery(),
+        filter: () => createMockQuery(),
+        match: () => createMockQuery(),
+        
+        // Ordering and limiting
         order: () => createMockQuery(),
         limit: () => createMockQuery(),
-        single: function() {
-          // Return a Promise directly to avoid TS1320 error
-          return Promise.resolve(mockSingleResult);
-        },
         range: () => createMockQuery(),
-        in: () => createMockQuery()
+        single: () => Promise.resolve(mockSingleResult),
+        maybeSingle: () => createMockQuery(),
+        explain: () => createMockQuery(),
+        
+        // For count queries
+        count: () => Promise.resolve(mockCountResult)
       };
-      
-      // For general queries, make them thenable but ensure they're proper Promises
-      return new Promise((resolve) => {
-        // Add chainable methods to the Promise
-        const promise = Promise.resolve(mockQueryResult);
-        Object.assign(promise, mockQuery);
-        resolve(mockQueryResult);
-      });
     };
     
     // Create a more complete mock Supabase client
@@ -60,26 +82,20 @@ export function createBrowserClient() {
         updateUser: () => Promise.resolve({ error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } }, error: null })
       },
-      from: () => ({
-        select: (selectParam?: string, options?: any) => {
-          if (options?.count) {
-            return Promise.resolve(mockCountResult);
-          }
-          return createMockQuery();
-        },
-        insert: () => createMockQuery(),
-        update: () => createMockQuery(),
-        delete: () => createMockQuery(),
-        upsert: () => createMockQuery()
-      }),
+      from: () => createMockQuery(),
       storage: {
         from: () => ({
           upload: () => Promise.resolve({ data: null, error: null }),
           getPublicUrl: () => ({ data: { publicUrl: '' }, error: null }),
-          remove: () => Promise.resolve({ data: null, error: null })
+          remove: () => Promise.resolve({ data: null, error: null }),
+          list: () => Promise.resolve({ data: [], error: null }),
+          download: () => Promise.resolve({ data: new Blob(), error: null }),
+          move: () => Promise.resolve({ data: null, error: null }),
+          copy: () => Promise.resolve({ data: null, error: null })
         }),
         listBuckets: () => Promise.resolve({ data: [], error: null })
-      }
+      },
+      rpc: () => createMockQuery()
     };
     
     return mockClient;
