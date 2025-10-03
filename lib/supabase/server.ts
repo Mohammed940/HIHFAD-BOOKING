@@ -114,16 +114,75 @@ export async function createServerClient() {
   // If we don't have cookieStore (during build), return a mock
   if (!cookieStore) {
     console.warn('Cookie store not available. Using mock Supabase client.')
+    
+    // Create a proper mock that supports method chaining
+    const mockQueryResult = { data: [], error: null }
+    const mockSingleResult = { data: null, error: null }
+    const mockCountResult = { count: 0, error: null }
+    
+    // Create a mock query builder that supports chaining
+    const createMockQuery = () => {
+      return {
+        // Query methods
+        select: function(selectParam?: string, options?: any) {
+          // Handle count queries
+          if (options?.count) {
+            return Promise.resolve(mockCountResult);
+          }
+          return createMockQuery();
+        },
+        insert: () => createMockQuery(),
+        update: () => createMockQuery(),
+        delete: () => createMockQuery(),
+        upsert: () => createMockQuery(),
+        
+        // Filter methods
+        eq: () => createMockQuery(),
+        neq: () => createMockQuery(),
+        gt: () => createMockQuery(),
+        gte: () => createMockQuery(),
+        lt: () => createMockQuery(),
+        lte: () => createMockQuery(),
+        like: () => createMockQuery(),
+        ilike: () => createMockQuery(),
+        is: () => createMockQuery(),
+        in: () => createMockQuery(),
+        contains: () => createMockQuery(),
+        containedBy: () => createMockQuery(),
+        rangeLt: () => createMockQuery(),
+        rangeGt: () => createMockQuery(),
+        rangeLte: () => createMockQuery(),
+        rangeGte: () => createMockQuery(),
+        rangeAdjacent: () => createMockQuery(),
+        overlaps: () => createMockQuery(),
+        textSearch: () => createMockQuery(),
+        fts: () => createMockQuery(),
+        plfts: () => createMockQuery(),
+        phfts: () => createMockQuery(),
+        wfts: () => createMockQuery(),
+        filter: () => createMockQuery(),
+        match: () => createMockQuery(),
+        
+        // Ordering and limiting
+        order: () => createMockQuery(),
+        limit: () => createMockQuery(),
+        range: () => createMockQuery(),
+        single: () => Promise.resolve(mockSingleResult),
+        maybeSingle: () => createMockQuery(),
+        explain: () => createMockQuery(),
+        
+        // For count queries
+        count: () => Promise.resolve(mockCountResult)
+      };
+    };
+    
     return {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
       },
-      from: () => ({
-        select: () => Promise.resolve({ data: [], error: null }),
-        eq: () => Promise.resolve({ data: [], error: null }),
-      }),
-      rpc: () => Promise.resolve({ data: null, error: null })
+      from: () => createMockQuery(),
+      rpc: () => createMockQuery()
     } as any
   }
 
