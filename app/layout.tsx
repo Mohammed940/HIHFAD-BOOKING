@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/sonner"
 import ErrorBoundary from "@/components/error-boundary"
+import { AuthProvider } from "@/hooks/use-auth"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -36,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ErrorBoundary>
-          <Suspense fallback={null}>{children}</Suspense>
-          <Toaster />
-          <Analytics />
-        </ErrorBoundary>
+        <AuthProvider>
+          <ErrorBoundary>
+            <Suspense fallback={null}>{children}</Suspense>
+            <Toaster />
+            <Analytics />
+          </ErrorBoundary>
+        </AuthProvider>
       </body>
     </html>
   )

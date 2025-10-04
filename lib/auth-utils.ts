@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { User } from "@supabase/supabase-js"
 
 export async function requireAuth() {
   const supabase = await createClient()
@@ -11,12 +12,20 @@ export async function requireAuth() {
     redirect("/auth/login")
   }
 
-  return user
+  return { user: user as User, supabase }
+}
+
+export async function optionalAuth() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  return { user: user as User | null, supabase }
 }
 
 export async function requireAdmin() {
-  const user = await requireAuth()
-  const supabase = await createClient()
+  const { user, supabase } = await requireAuth()
 
   // Get all admin roles for the user (instead of single)
   const { data: adminRoles, error } = await supabase
@@ -36,7 +45,7 @@ export async function requireAdmin() {
   }
 
   // Find the first super_admin role if it exists
-  const superAdminRole = adminRoles.find(role => role.role === "super_admin")
+  const superAdminRole = adminRoles.find((role: any) => role.role === "super_admin")
   
   if (superAdminRole) {
     return { user, role: superAdminRole.role }

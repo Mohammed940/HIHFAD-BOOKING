@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,20 +5,36 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MapPin, User, FileText, Plus } from "lucide-react"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { CancelAppointmentButton } from "@/components/cancel-appointment-button"
+import { requireAuth } from "@/lib/auth-utils"
+
+// Define the type for appointment data
+interface Appointment {
+  id: string
+  user_id: string
+  medical_center_id: string
+  clinic_id: string
+  appointment_date: string
+  appointment_time: string
+  status: string
+  notes: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  medical_center?: {
+    name: string
+    address: string
+  }
+  clinic?: {
+    name: string
+    doctor_name: string
+  }
+}
 
 export default async function AppointmentsPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { user, supabase } = await requireAuth()
 
   // Fetch user's appointments with related data
   const { data: appointments } = await supabase
@@ -89,7 +104,7 @@ export default async function AppointmentsPage() {
             {/* Appointments List */}
             {appointments && appointments.length > 0 ? (
               <div className="space-y-6">
-                {appointments.map((appointment) => (
+                {appointments.map((appointment: Appointment) => (
                   <Card 
                     key={appointment.id} 
                     className={`hover:shadow-xl transition-all duration-500 hover:-translate-y-1 ${getStatusColor(appointment.status)} bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden`}

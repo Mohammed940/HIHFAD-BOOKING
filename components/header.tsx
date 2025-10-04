@@ -4,22 +4,25 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Menu, X, Calendar, LogOut, User } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 
 interface HeaderProps {
   user?: any
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user: externalUser }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
-  const supabase = createBrowserClient()
   const pathname = usePathname()
+  const { user: authUser, signOut } = useAuth()
+  
+  // Use the user from useAuth hook if available, otherwise fallback to external user
+  const currentUser = authUser || externalUser
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push("/")
     router.refresh()
   }
@@ -77,7 +80,7 @@ export function Header({ user }: HeaderProps) {
             >
               الأخبار
             </Link>
-            {user ? (
+            {currentUser ? (
               <>
                 <Link
                   href="/appointments"
@@ -172,7 +175,7 @@ export function Header({ user }: HeaderProps) {
               >
                 الأخبار
               </Link>
-              {user ? (
+              {currentUser ? (
                 <>
                   <Link
                     href="/appointments"

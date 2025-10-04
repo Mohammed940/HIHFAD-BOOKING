@@ -1,47 +1,39 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  requireAuth?: boolean
-  redirectTo?: string
 }
 
-export function ProtectedRoute({ children, requireAuth = true, redirectTo = "/auth/login" }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
     if (!loading) {
-      if (requireAuth && !user) {
-        router.push(redirectTo)
-      } else if (!requireAuth && user) {
-        router.push("/")
+      if (!user) {
+        router.push("/auth/login")
+      } else {
+        setChecked(true)
       }
     }
-  }, [user, loading, requireAuth, redirectTo, router])
+  }, [user, loading, router])
 
-  if (loading) {
+  if (loading || !checked) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="mr-3">جاري التحقق من البيانات...</span>
       </div>
     )
   }
 
-  if (requireAuth && !user) {
-    return null
-  }
-
-  if (!requireAuth && user) {
+  if (!user) {
     return null
   }
 
