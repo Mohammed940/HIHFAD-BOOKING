@@ -9,6 +9,7 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { CancelAppointmentButton } from "@/components/cancel-appointment-button"
 import { requireAuth } from "@/lib/auth-utils"
+import { NotificationHandler } from "@/components/notification-handler"
 
 // Define the type for appointment data
 interface Appointment {
@@ -77,6 +78,7 @@ export default async function AppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NotificationHandler userId={user?.id || null} />
       <Header user={user} />
 
       <main className="py-12">

@@ -8,6 +8,7 @@ A comprehensive medical appointment booking system built with Next.js, Supabase,
 - **Medical Centers**: Browse and search medical centers and hospitals
 - **Clinic Management**: View clinics within centers with detailed information
 - **Appointment Booking**: Easy appointment scheduling system
+- **Appointment Notifications**: Real-time browser notifications for appointment status changes and reminders
 - **Admin Panel**: Comprehensive admin dashboard for managing centers, clinics, appointments, and users
 - **News Section**: Keep users updated with medical news and announcements
 - **Responsive Design**: Mobile-friendly interface that works on all devices
@@ -67,6 +68,15 @@ The system requires a Supabase database with the following tables:
 
 Database schema and seed scripts are available in the `scripts/` directory.
 
+## Notification System
+
+The system includes a comprehensive notification system that provides:
+- Real-time browser notifications for appointment status changes (approved, rejected, pending)
+- Appointment reminders 2 hours before scheduled appointments
+- Both visual notifications within the app and system browser notifications
+
+For detailed information about the notification system, see [NOTIFICATION_SYSTEM.md](NOTIFICATION_SYSTEM.md).
+
 ## Deployment
 
 ### Vercel Deployment
@@ -103,6 +113,7 @@ Note: Ensure the user has the `super_admin` role in the `admin_roles` table.
 ```
 app/                    # Next.js app router pages
   admin/                # Admin panel pages
+  api/                  # API routes including notification reminders
   auth/                 # Authentication pages
   centers/              # Medical centers pages
   clinics/              # Clinic pages

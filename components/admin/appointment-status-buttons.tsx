@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { showAppointmentStatusNotification } from "@/lib/notification-service" // Add this import
 
 interface AppointmentStatusButtonsProps {
   appointmentId: string
@@ -20,13 +21,35 @@ export function AppointmentStatusButtons({
   const updateStatus = async (status: string) => {
     setLoading(true)
     try {
-      const { error } = await supabase
+      // First, get the appointment details for the notification
+      const { data: appointment, error: fetchError } = await supabase
+        .from("appointments")
+        .select(`
+          *,
+          medical_center:medical_centers(name),
+          clinic:clinics(name)
+        `)
+        .eq("id", appointmentId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Update the appointment status
+      const { error: updateError } = await supabase
         .from("appointments")
         .update({ status })
         .eq("id", appointmentId)
 
-      if (error) throw error
+      if (updateError) throw updateError
 
+      // Show notification to the user
+      showAppointmentStatusNotification(
+        status,
+        appointment.medical_center?.name || "المركز الطبي",
+        appointment.appointment_date,
+        appointment.appointment_time
+      )
+      
       toast.success(`تم تحديث حالة الموعد إلى: ${getStatusLabel(status)}`)
       
       // Refresh the page or call the callback

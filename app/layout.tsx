@@ -32,12 +32,32 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        {/* Add service worker registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(function(error) {
+                      console.log('Service Worker registration failed:', error);
+                    });
+                });
+              }
+            `,
+          }}
+        />
+      </head>
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <AuthProvider>
           <ErrorBoundary>
             <Suspense fallback={null}>{children}</Suspense>
