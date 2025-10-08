@@ -4,25 +4,9 @@ import { useEffect, useCallback } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import {
   requestNotificationPermission,
-  showAppointmentStatusNotification,
   showAppointmentReminder,
   shouldShowReminder
 } from '@/lib/notification-service'
-
-// Define types for the Supabase payload
-interface SupabasePayload {
-  new: {
-    status: string
-    medical_center?: {
-      name: string
-    }
-    appointment_date: string
-    appointment_time: string
-  }
-  old: {
-    status: string
-  }
-}
 
 // Define type for appointment
 interface Appointment {
@@ -57,45 +41,6 @@ export const useNotifications = (userId: string | null) => {
     }
   }, [])
 
-  // Subscribe to appointment changes
-  const subscribeToAppointmentChanges = useCallback(() => {
-    if (!userId) return
-
-    const channel = supabase
-      .channel('appointment-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'appointments',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload: SupabasePayload) => { // Add type annotation here
-          console.log('Appointment change received:', payload)
-          
-          const newAppointment = payload.new
-          const oldAppointment = payload.old
-          
-          // Check if status changed
-          if (newAppointment.status !== oldAppointment.status) {
-            // Show notification for status change
-            showAppointmentStatusNotification(
-              newAppointment.status,
-              newAppointment.medical_center?.name || 'المركز الطبي',
-              newAppointment.appointment_date,
-              newAppointment.appointment_time
-            )
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [supabase, userId])
-
   // Check for appointment reminders
   const checkAppointmentReminders = useCallback(async () => {
     if (!userId) return
@@ -117,7 +62,7 @@ export const useNotifications = (userId: string | null) => {
       }
 
       // Check each appointment for reminders
-      appointments?.forEach((appointment: Appointment) => { // Add type annotation here
+      appointments?.forEach((appointment: Appointment) => {
         if (shouldShowReminder(appointment.appointment_date, appointment.appointment_time)) {
           showAppointmentReminder(
             appointment.medical_center?.name || 'المركز الطبي',
@@ -139,9 +84,6 @@ export const useNotifications = (userId: string | null) => {
     // Register service worker
     registerServiceWorker()
     
-    // Subscribe to appointment changes
-    const unsubscribe = subscribeToAppointmentChanges()
-    
     // Set up interval to check for reminders
     const reminderInterval = setInterval(checkAppointmentReminders, 60000) // Check every minute
     
@@ -149,10 +91,9 @@ export const useNotifications = (userId: string | null) => {
     checkAppointmentReminders()
     
     return () => {
-      if (unsubscribe) unsubscribe()
       clearInterval(reminderInterval)
     }
-  }, [registerServiceWorker, subscribeToAppointmentChanges, checkAppointmentReminders])
+  }, [registerServiceWorker, checkAppointmentReminders])
 
   return {
     requestNotificationPermission
