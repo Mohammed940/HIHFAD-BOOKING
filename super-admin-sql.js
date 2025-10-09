@@ -1,0 +1,11 @@
+console.log('To make your user a super admin, please run the following SQL command in your Supabase dashboard:');
+console.log('');
+console.log('INSERT INTO public.admin_roles (user_id, role) VALUES (\'2da92fca-b29c-47c5-ab67-cce3580444e9\', \'super_admin\');');
+console.log('');
+console.log('Steps to do this:');
+console.log('1. Go to https://supabase.com/dashboard/project/zvcbgtnrlajbfjbelamp/sql');
+console.log('2. Sign in with your Supabase account');
+console.log('3. In the SQL editor, paste the SQL command above');
+console.log('4. Click "Run" to execute it');
+console.log('');
+console.log('After running this command, you will be able to access the admin dashboard at http://localhost:3001/admin');
