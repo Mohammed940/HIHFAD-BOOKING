@@ -144,7 +144,7 @@ export default function RegisterPage() {
                         id="phone"
                         name="phone"
                         type="tel"
-                        placeholder="+966 50 123 4567"
+                        placeholder="+963 981 061 026"
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="pr-12 py-6 text-base rounded-xl border-2 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
