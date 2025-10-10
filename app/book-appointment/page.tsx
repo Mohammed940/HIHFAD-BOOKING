@@ -313,11 +313,11 @@ export default function BookAppointmentPage() {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    const startTimeInMinutes = 16 * 60; // 16:00 in minutes
-    const endTimeInMinutes = 22 * 60;   // 22:00 in minutes
+    const startTimeInMinutes = 15 * 60; // 15:00 in minutes
+    const endTimeInMinutes = 18 * 60;   // 18:00 in minutes
 
     if (currentTimeInMinutes < startTimeInMinutes || currentTimeInMinutes >= endTimeInMinutes) {
-      setError("عذرًا، يمكن حجز المواعيد فقط بين الساعة 4:00 مساءً و 10:00 مساءً");
+      setError("عذرًا، يمكن حجز المواعيد فقط بين الساعة 3:00 مساءً و 6:00 مساءً");
       return;
     }
 
