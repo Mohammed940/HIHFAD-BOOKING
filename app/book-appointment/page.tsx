@@ -16,6 +16,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format, addDays, isAfter, isBefore, startOfDay, getDay } from "date-fns"
 import { ar } from "date-fns/locale"
+import { validatePatientForClinic, getClinicType, getAgeRestrictions, getGenderRestriction } from "@/lib/clinic-utils"
 
 interface MedicalCenter {
   id: string
@@ -72,6 +73,34 @@ export default function BookAppointmentPage() {
   // Get URL parameters
   const centerParam = searchParams.get("center")
   const clinicParam = searchParams.get("clinic")
+
+  // Helper function to get age restrictions for a clinic
+  const getAgeRestrictionsForClinic = (clinicId: string) => {
+    const clinic = clinics.find((c) => c.id === clinicId);
+    if (clinic) {
+      const clinicType = getClinicType(clinic.name);
+      return getAgeRestrictions(clinicType);
+    }
+    return { minAge: 1, maxAge: 120 };
+  };
+
+  // Helper function to get age restriction message
+  const getAgeRestrictionMessage = (clinicId: string) => {
+    const clinic = clinics.find((c) => c.id === clinicId);
+    if (clinic) {
+      const clinicType = getClinicType(clinic.name);
+      const restrictions = getAgeRestrictions(clinicType);
+      
+      if (clinicType === 'pediatrics') {
+        return `العمر المسموح: ${restrictions.minAge} - ${restrictions.maxAge} سنة (عيادة الأطفال)`;
+      } else if (clinicType === 'internal') {
+        return `العمر المسموح: ${restrictions.minAge} سنة فما فوق (عيادة الباطنية)`;
+      } else if (clinicType === 'obstetrics') {
+        return "الجنس المسموح: أنثى فقط (عيادة النساء)";
+      }
+    }
+    return "العمر المسموح: 1-120 سنة";
+  };
 
   useEffect(() => {
     checkUser()
@@ -279,6 +308,18 @@ export default function BookAppointmentPage() {
       return
     }
 
+    // Validate patient against clinic restrictions
+    const clinic = clinics.find((c) => c.id === selectedClinic);
+    if (clinic) {
+      const patientAgeNum = parseInt(patientAge);
+      const validation = validatePatientForClinic(clinic.name, patientAgeNum, patientGender as 'male' | 'female');
+      
+      if (!validation.isValid) {
+        setError(validation.errorMessage || "عذرًا، لا يمكن حجز موعد لهذا المريض في هذه العيادة.");
+        return;
+      }
+    }
+
     setIsBooking(true)
     setError(null)
 
@@ -438,6 +479,9 @@ export default function BookAppointmentPage() {
       </div>
     )
   }
+
+  // Get age restrictions for the selected clinic
+  const ageRestrictions = selectedClinic ? getAgeRestrictionsForClinic(selectedClinic) : { minAge: 1, maxAge: 120 };
 
   return (
     <div className="min-h-screen bg-background">
@@ -660,11 +704,16 @@ export default function BookAppointmentPage() {
                             value={patientAge}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPatientAge(e.target.value)}
                             placeholder="العمر"
-                            min="1"
-                            max="120"
+                            min={ageRestrictions.minAge}
+                            max={ageRestrictions.maxAge}
                             required
                             className="border-2 border-primary/30 focus:ring-2 focus:ring-primary rounded-xl p-4 text-base"
                           />
+                          {selectedClinic && (
+                            <p className="text-sm text-muted-foreground">
+                              {getAgeRestrictionMessage(selectedClinic)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
