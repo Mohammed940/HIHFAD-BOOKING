@@ -308,6 +308,19 @@ export default function BookAppointmentPage() {
       return
     }
 
+    // Validate that the current time is within the allowed range (16:00-22:00)
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const startTimeInMinutes = 16 * 60; // 16:00 in minutes
+    const endTimeInMinutes = 22 * 60;   // 22:00 in minutes
+
+    if (currentTimeInMinutes < startTimeInMinutes || currentTimeInMinutes >= endTimeInMinutes) {
+      setError("عذرًا، يمكن حجز المواعيد فقط بين الساعة 4:00 مساءً و 10:00 مساءً");
+      return;
+    }
+
     // Validate patient against clinic restrictions
     const clinic = clinics.find((c) => c.id === selectedClinic);
     if (clinic) {
